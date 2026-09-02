@@ -38,7 +38,7 @@ require $wp_tests_dir . '/includes/functions.php';
  * @return void
  */
 function _load_plugin_under_test(): void {
-	require dirname( __DIR__ ) . '/plugin.php';
+	require_once dirname( __DIR__ ) . '/plugin.php';
 }
 tests_add_filter( 'muplugins_loaded', '_load_plugin_under_test' );
 

@@ -67,8 +67,8 @@ class Migrate_Authors_Command_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( 2, $migrated );
-		$this->assertSame( $new_author, get_post( $post_a )->post_author );
-		$this->assertSame( $new_author, get_post( $post_b )->post_author );
+		$this->assertSame( $new_author, (int) get_post( $post_a )->post_author );
+		$this->assertSame( $new_author, (int) get_post( $post_b )->post_author );
 	}
 
 	/**
@@ -108,12 +108,12 @@ class Migrate_Authors_Command_Test extends WP_UnitTestCase {
 		} finally {
 			$this->assertSame(
 				$mapped_author,
-				get_post( $post_a )->post_author,
+				(int) get_post( $post_a )->post_author,
 				'Post before the failure should be migrated.'
 			);
 			$this->assertSame(
 				$original_author,
-				get_post( $post_c )->post_author,
+				(int) get_post( $post_c )->post_author,
 				'Post after the failure should be untouched.'
 			);
 		}
@@ -136,7 +136,7 @@ class Migrate_Authors_Command_Test extends WP_UnitTestCase {
 
 		unlink( $mapping_file );
 
-		$this->assertSame( $new_author, get_post( $post_a )->post_author );
+		$this->assertSame( $new_author, (int) get_post( $post_a )->post_author );
 		$this->assertStringContainsString( '1 posts migrated', $this->logger->messages['success'][0] ?? '' );
 	}
 

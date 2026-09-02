@@ -26,16 +26,30 @@ class Stale_Drafts_Command_Test extends WP_UnitTestCase {
 	 * @return int Post ID.
 	 */
 	private function create_draft_last_modified_days_ago( int $days_ago ): int {
-		$timestamp = gmdate( 'Y-m-d H:i:s', time() - $days_ago * DAY_IN_SECONDS );
+		global $wpdb;
 
-		return self::factory()->post->create(
+		$post_id = self::factory()->post->create(
 			[
-				'post_status'       => 'draft',
-				'post_title'        => "Draft from {$days_ago} days ago",
-				'post_modified'     => $timestamp,
-				'post_modified_gmt' => $timestamp,
+				'post_status' => 'draft',
+				'post_title'  => "Draft from {$days_ago} days ago",
 			]
 		);
+
+		// wp_insert_post() ignores an explicit post_modified on creation and
+		// stamps the current time instead, so backdating has to go straight
+		// to the database — the same column find_stale_drafts() queries.
+		$timestamp = gmdate( 'Y-m-d H:i:s', time() - $days_ago * DAY_IN_SECONDS );
+		$wpdb->update(
+			$wpdb->posts,
+			[
+				'post_modified'     => $timestamp,
+				'post_modified_gmt' => $timestamp,
+			],
+			[ 'ID' => $post_id ]
+		);
+		clean_post_cache( $post_id );
+
+		return $post_id;
 	}
 
 	public function test_find_stale_drafts_only_returns_drafts_past_the_cutoff(): void {
