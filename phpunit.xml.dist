@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<phpunit
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    backupGlobals="false"
+>
+    <testsuites>
+        <testsuite name="unit">
+            <directory suffix="_Test.php">./tests/Unit</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- DB_* credentials come from the WP_CLI_TEST_DB* env vars read inside this file. -->
+        <env name="WP_PHPUNIT__TESTS_CONFIG" value="tests/wp-tests-config.php" />
+    </php>
+</phpunit>

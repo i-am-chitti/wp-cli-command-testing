@@ -1,0 +1,5 @@
+/vendor/
+/wordpress/
+/wp-cli-behat-cache/
+.phpunit.result.cache
+.DS_Store
