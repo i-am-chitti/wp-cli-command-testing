@@ -6,6 +6,7 @@ on:
   pull_request:
 
 env:
+  WP_CLI_TEST_DBHOST: 127.0.0.1
   WP_CLI_TEST_DBROOTUSER: root
   WP_CLI_TEST_DBROOTPASS: root
   WP_CLI_TEST_DBUSER: wp_cli_test
@@ -44,7 +45,6 @@ jobs:
       - run: composer prepare-tests
         env:
           WP_VERSION: ${{ matrix.wp }}
-          WP_CLI_TEST_DBHOST: 127.0.0.1
 
       - run: composer test
 
