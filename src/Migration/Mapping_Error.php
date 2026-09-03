@@ -12,11 +12,8 @@ namespace WPCLITesting\Migration;
 use RuntimeException;
 
 /**
- * A plain PHP exception, on purpose.
- *
- * `Migrate_Authors_Command::migrate()` throws this instead of calling
- * `WP_CLI::error()` directly, so the halting behaviour can be asserted on
- * from a plain PHPUnit test without touching WP-CLI's exit machinery at all.
+ * A plain PHP exception, on purpose — lets `migrate()`'s halting behaviour
+ * be tested without touching WP-CLI's exit machinery at all.
  */
 class Mapping_Error extends RuntimeException {
 

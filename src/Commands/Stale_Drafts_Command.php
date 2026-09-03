@@ -17,9 +17,8 @@ use WP_Post;
 /**
  * Class Stale_Drafts_Command.
  *
- * Exists to demonstrate the one output path that PHPUnit's `ob_start()`
- * *can* see: `--format=json/csv` goes through plain `echo`, unlike the
- * success/log/error messages `Migrate_Authors_Command` uses.
+ * `--format=json/csv` goes through plain `echo`, so `ob_start()` can
+ * capture it — unlike the success/log/error messages a Logger swap needs.
  */
 class Stale_Drafts_Command extends WP_CLI_Command {
 

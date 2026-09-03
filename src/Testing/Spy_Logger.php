@@ -15,14 +15,10 @@ use WP_CLI\Loggers\Base;
 /**
  * Class Spy_Logger.
  *
- * WP-CLI's real loggers extend `WP_CLI\Loggers\Base` and write with
- * `fwrite()` straight to `php://stdout` / `php://stderr`, which is why
- * `expectOutputString()` and `ob_start()` never see them. This one keeps
- * the messages in memory instead.
- *
- * Install it with `WP_CLI::set_logger( new Spy_Logger() )` before calling a
- * command, and reset it in `tearDown()` so it doesn't leak into the next
- * test.
+ * WP-CLI's real loggers write with `fwrite()` straight to `php://stdout`,
+ * which is why `expectOutputString()`/`ob_start()` never see them. Install
+ * this one with `WP_CLI::set_logger()` before calling a command, and reset
+ * it in `tearDown()`.
  */
 class Spy_Logger extends Base {
 
@@ -38,39 +34,18 @@ class Spy_Logger extends Base {
 		'error'   => [],
 	];
 
-	/**
-	 * @param string $message Message to record.
-	 * @param bool   $newline Unused; kept for interface compatibility.
-	 *
-	 * @return void
-	 */
 	public function info( $message, $newline = true ) {
 		$this->messages['info'][] = $message;
 	}
 
-	/**
-	 * @param string $message Message to record.
-	 *
-	 * @return void
-	 */
 	public function success( $message ) {
 		$this->messages['success'][] = $message;
 	}
 
-	/**
-	 * @param string $message Message to record.
-	 *
-	 * @return void
-	 */
 	public function warning( $message ) {
 		$this->messages['warning'][] = $message;
 	}
 
-	/**
-	 * @param string $message Message to record.
-	 *
-	 * @return void
-	 */
 	public function error( $message ) {
 		$this->messages['error'][] = $message;
 	}

@@ -140,12 +140,7 @@ class Migrate_Authors_Command_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '1 posts migrated', $this->logger->messages['success'][0] ?? '' );
 	}
 
-	// Deliberately no test here that calls run() with a bad mapping and
-	// expects it to "just log an error". WP_CLI::error() exits the process
-	// by default, and there's no supported way to stop that from a plain
-	// PHPUnit test — WP_CLI::$capture_exit is private, and the trick that
-	// flips it, WP_CLI::runcommand(), needs a fully started Runner that
-	// only exists inside a real `wp` invocation. That's exactly what the
-	// Behat scenario in features/migrate-authors.feature is for: it runs
-	// the real binary, so exiting is expected and safe to assert on.
+	// No test here for run() with a bad mapping: WP_CLI::error() exits the
+	// process by default, and nothing short of a real `wp` invocation can
+	// stop that safely. See features/migrate-authors.feature instead.
 }

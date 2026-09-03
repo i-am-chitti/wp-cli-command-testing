@@ -21,16 +21,12 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 	/**
 	 * Reassign posts to their mapped WordPress author.
 	 *
-	 * Reads a legacy-author-id -> WordPress-user-id mapping from a CSV file,
-	 * then walks every post that still carries a `_legacy_author_id` meta
-	 * value and updates `post_author` to match. Stops the moment it finds a
-	 * legacy ID that has no entry in the mapping — posts it has already
-	 * touched stay touched.
+	 * Stops at the first post with no mapping — posts already touched stay touched.
 	 *
 	 * ## OPTIONS
 	 *
 	 * --map=<file>
-	 * : Path to a two-column CSV file: legacy_author_id,wp_user_id.
+	 * : Path to a CSV file: legacy_author_id,wp_user_id.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -62,7 +58,7 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 	 * ## OPTIONS
 	 *
 	 * --map=<file>
-	 * : Path to the mapping CSV file.
+	 * : Path to the mapping file.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -91,10 +87,8 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 	/**
 	 * Walk every migratable post and reassign its author.
 	 *
-	 * This is the one method in the class that never touches `WP_CLI::`.
-	 * It throws a plain `Mapping_Error` instead of calling `WP_CLI::error()`,
-	 * which is what lets a PHPUnit test call it directly and assert on the
-	 * exception and on the database, with no WP-CLI runtime involved at all.
+	 * Never touches `WP_CLI::` — throws a plain exception instead, so it's
+	 * testable directly with no WP-CLI runtime involved.
 	 *
 	 * @param array<string, int> $mapping Legacy author ID => WordPress user ID.
 	 *
@@ -108,9 +102,7 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 				'post_type'      => 'post',
 				'fields'         => 'ids',
 				'posts_per_page' => -1,
-				// Deterministic order matters here: the whole point of the
-				// "stops before touching the rest" test is knowing exactly
-				// which posts came before the failure and which came after.
+				// Deterministic order — the "stops before touching the rest" test depends on it.
 				'orderby'        => 'ID',
 				'order'          => 'ASC',
 			]
@@ -144,9 +136,9 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 	}
 
 	/**
-	 * Load a legacy-author-id -> WordPress-user-id mapping from a CSV file.
+	 * Load a legacy-author-id -> WordPress-user-id mapping.
 	 *
-	 * @param string $path Path to the mapping CSV file.
+	 * @param string $path Path to the mapping file.
 	 *
 	 * @return array<string, int>
 	 */
