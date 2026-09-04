@@ -12,33 +12,24 @@ Nothing in this repo is tied to any client project. `migrate-authors` (reassigns
 
 ## Running the tests
 
-You need a MySQL/MariaDB server reachable from your machine. The easiest way is a throwaway container:
-
-```bash
-docker run -d --name wpcli_dev_db --restart unless-stopped -p 3308:3306 -e MYSQL_ROOT_PASSWORD=root mariadb:11
-php -r '(new mysqli("127.0.0.1","root","root","",3308))->query("CREATE DATABASE IF NOT EXISTS wp_cli_test");'
-```
-
-Then copy `.env.example` to `.env` and adjust the port/credentials if yours differ:
-
-```bash
-cp .env.example .env
-```
-
-`.env` is gitignored and loaded automatically — by `tests/bootstrap.php` for `composer test`, and by the `prepare-tests`/`behat` scripts themselves (they source it into a real shell environment, since they're separate bash scripts that never touch PHP). No exporting anything by hand:
-
 ```bash
 composer install
-composer prepare-tests   # provisions a throwaway WP install + test DB
+cp .env.example .env
+
+# PHPUnit needs a MySQL/MariaDB server — a throwaway container is easiest:
+docker run -d --name wpcli_dev_db --restart unless-stopped -p 3308:3306 -e MYSQL_ROOT_PASSWORD=root mariadb:11
+composer prepare-tests   # creates the test database
+
 composer test            # PHPUnit
 composer behat           # Behat, against the real `wp` binary
 ```
 
-If your `mysql` CLI is newer than the server can talk to (macOS Homebrew's `mysql` 26.x dropped the `mysql_native_password` client plugin some install scripts still request), install a compatible one and the `prepare-tests`/`behat` scripts will pick it up automatically if it's at the standard Homebrew keg path:
+`.env` is gitignored and loaded automatically, so nothing needs exporting by hand: `tests/bootstrap.php` loads it for PHPUnit, and the `behat` script sources it into a real shell environment (Behat spawns `wp` subprocesses, which only inherit real env vars).
 
-```bash
-brew install mysql-client@8.0
-```
+Two deliberate choices keep this from needing any `mysql` client binary locally:
+
+- **`prepare-tests` is our own script** (`bin/prepare-db.php`), using PHP's `mysqli` rather than shelling out to `mysql`. `wp-cli/wp-cli-tests`' bundled `install-package-tests` shells out to the CLI and requests `mysql_native_password` explicitly, which fails outright on clients that dropped that plugin (Homebrew's `mysql` 26.x, for one).
+- **Behat runs on SQLite locally** via `WP_CLI_TEST_DBTYPE=sqlite`. `FeatureContext` skips every `mysql`/`mysqldump` shell-out in that mode, so Behat needs no database server at all. CI leaves this unset and runs Behat against MySQL, where the client works fine — so the MySQL path still gets real coverage on every push.
 
 For readable output instead of dots: `composer test -- --testdox` and `vendor/bin/behat --format=pretty`.
 
@@ -64,7 +55,9 @@ A few smaller things that only showed up once I actually ran this against a real
 - **`wp_insert_post()` ignores an explicit `post_modified` on creation.** Backdating a post for a date-based query test (`Stale_Drafts_Command_Test`) has to update the `posts` table directly after creation, then call `clean_post_cache()` — see `create_draft_last_modified_days_ago()`.
 - **`wp-cli/wp-cli` alone doesn't give you `wp post`, `wp user`, etc.** Those ship in the separate `wp-cli/entity-command` package. The Behat feature needed it as a dev dependency before `wp post create` / `wp user create` would resolve.
 - **PHPUnit version matters more than the `^9.6 || ^10.5` range suggests.** The very latest 10.5.x point release removed a `PHPUnit\Util\Test` method that `wp-phpunit/wp-phpunit`'s own `abstract-testcase.php` still calls directly — not something `yoast/phpunit-polyfills` covers, since it's an internal API, not a public assertion. Pinned to `^9.6` here, which is fully green.
-- **`.env` only helps the scripts that actually load it.** `tests/bootstrap.php` loads it for PHPUnit, but `prepare-tests`/`behat` are separate bash scripts (from `wp-cli/wp-cli-tests`) that have no idea `.env` exists. Fixed by having those composer scripts `source` it into a real shell environment first — see the `bash -c 'set -a; . .env; set +a; ...'` pattern in `composer.json`.
+- **`.env` only helps the scripts that actually load it.** `tests/bootstrap.php` loads it for PHPUnit, but Behat is a separate binary that has no idea `.env` exists — and it spawns `wp` subprocesses, which inherit only real env vars. Hence the `bash -c 'set -a; . .env; set +a; …'` pattern on the `behat` script in `composer.json`.
+- **`wp-cli-tests`' Behat context shells out to `mysql`/`mysqldump` for per-scenario database setup** — not just its wrapper script, but `FeatureContext` itself. There's no getting around that on the MySQL path, so a broken `mysql` client breaks Behat even if PHP can reach the database perfectly well. `WP_CLI_TEST_DBTYPE=sqlite` sidesteps it entirely: that mode branches away from every CLI shell-out, needs no database server, and is what this repo uses locally.
+- **`WP_VERSION=latest` isn't a value `wp core download --version=` accepts.** `wp-cli-tests`' `run-behat-tests` wrapper quietly resolved it via `curl` + `jq` first. Calling `vendor/bin/behat` directly means handling it yourself — unsetting the variable is enough, since `wp core download` defaults to latest.
 - **`vlucas/phpdotenv` doesn't call `putenv()` by default** — it only populates `$_ENV`/`$_SERVER`. That's invisible until something forks a child process, like WordPress's own test installer does: the child only inherits real OS env vars, so `DB_HOST` silently fell back to `localhost` even though `.env` loaded correctly in the parent process. Fixed by explicitly `putenv()`-ing each value phpdotenv loads (`tests/bootstrap.php`), and by having `tests/wp-tests-config.php` check `getenv()`, then `$_ENV`, then `$_SERVER` rather than trusting just one of them.
 
 Every command in this README has actually been run: `composer test` is 5/5 green against a real MySQL 8 + WordPress 6.7 install, and `composer behat` is 2/2 green against the real `wp` binary.
