@@ -12,12 +12,29 @@ Nothing in this repo is tied to any client project. `migrate-authors` (reassigns
 
 ## Running the tests
 
+You need a MySQL/MariaDB server reachable from your machine. The easiest way is a throwaway container:
+
+```bash
+docker run -d --name wpcli_dev_db --restart unless-stopped -p 3308:3306 -e MYSQL_ROOT_PASSWORD=root mariadb:11
+php -r '(new mysqli("127.0.0.1","root","root","",3308))->query("CREATE DATABASE IF NOT EXISTS wp_cli_test");'
+```
+
+Then copy `.env.example` to `.env` and adjust the port/credentials if yours differ:
+
+```bash
+cp .env.example .env
+```
+
+`.env` is gitignored and read automatically by `tests/bootstrap.php` — no exporting env vars by hand, and `composer test` just works from here on:
+
 ```bash
 composer install
 composer prepare-tests   # provisions a throwaway WP install + test DB
-composer test            # PHPUnit
-composer behat           # Behat, against the real `wp` binary
+composer test            # PHPUnit — reads .env automatically
+composer behat           # Behat, against the real `wp` binary — still needs the WP_CLI_TEST_DB* vars exported, since it's a separate script that doesn't load .env
 ```
+
+For readable output instead of dots: `composer test -- --testdox` and `vendor/bin/behat --format=pretty`.
 
 ## What each test actually proves
 
@@ -41,6 +58,7 @@ A few smaller things that only showed up once I actually ran this against a real
 - **`wp_insert_post()` ignores an explicit `post_modified` on creation.** Backdating a post for a date-based query test (`Stale_Drafts_Command_Test`) has to update the `posts` table directly after creation, then call `clean_post_cache()` — see `create_draft_last_modified_days_ago()`.
 - **`wp-cli/wp-cli` alone doesn't give you `wp post`, `wp user`, etc.** Those ship in the separate `wp-cli/entity-command` package. The Behat feature needed it as a dev dependency before `wp post create` / `wp user create` would resolve.
 - **PHPUnit version matters more than the `^9.6 || ^10.5` range suggests.** The very latest 10.5.x point release removed a `PHPUnit\Util\Test` method that `wp-phpunit/wp-phpunit`'s own `abstract-testcase.php` still calls directly — not something `yoast/phpunit-polyfills` covers, since it's an internal API, not a public assertion. Pinned to `^9.6` here, which is fully green.
+- **`vlucas/phpdotenv` doesn't call `putenv()` by default** — it only populates `$_ENV`/`$_SERVER`. That's invisible until something forks a child process, like WordPress's own test installer does: the child only inherits real OS env vars, so `DB_HOST` silently fell back to `localhost` even though `.env` loaded correctly in the parent process. Fixed by explicitly `putenv()`-ing each value phpdotenv loads (`tests/bootstrap.php`), and by having `tests/wp-tests-config.php` check `getenv()`, then `$_ENV`, then `$_SERVER` rather than trusting just one of them.
 
 Every command in this README has actually been run: `composer test` is 5/5 green against a real MySQL 8 + WordPress 6.7 install, and `composer behat` is 2/2 green against the real `wp` binary.
 

@@ -13,6 +13,21 @@ declare( strict_types=1 );
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
+// Loads .env so WP_CLI_TEST_DB* don't have to be exported by hand every
+// session. CI has no .env file — it sets these as real environment variables
+// on the job instead, so this is a no-op there.
+//
+// phpdotenv only writes to $_ENV/$_SERVER by default, not putenv(). That's a
+// problem here: WordPress's own installer step below runs as a separate PHP
+// process, which only inherits real OS env vars, not this process's $_ENV.
+// putenv() explicitly is what makes that child process see them too.
+if ( file_exists( dirname( __DIR__ ) . '/.env' ) ) {
+	$loaded = Dotenv\Dotenv::createImmutable( dirname( __DIR__ ) )->load();
+	foreach ( $loaded as $key => $value ) {
+		putenv( "{$key}={$value}" );
+	}
+}
+
 // `vendor/autoload.php` only autoloads WP-CLI's *classes* (WP_CLI,
 // WP_CLI_Command, WP_CLI\Loggers\Base, ...) via its classmap/PSR-0 config.
 // WP_CLI\Utils\format_items() and friends are plain functions in this file,
