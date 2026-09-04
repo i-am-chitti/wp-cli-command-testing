@@ -31,9 +31,9 @@
     },
     "scripts": {
         "test": "phpunit",
-        "prepare-tests": "install-package-tests",
-        "behat": "run-behat-tests",
-        "behat:rerun": "rerun-behat-tests"
+        "prepare-tests": "bash -c 'set -a; [ -f .env ] && . .env; set +a; [ -d /opt/homebrew/opt/mysql-client@8.0/bin ] && PATH=\"/opt/homebrew/opt/mysql-client@8.0/bin:$PATH\"; install-package-tests'",
+        "behat": "bash -c 'set -a; [ -f .env ] && . .env; set +a; [ -d /opt/homebrew/opt/mysql-client@8.0/bin ] && PATH=\"/opt/homebrew/opt/mysql-client@8.0/bin:$PATH\"; run-behat-tests'",
+        "behat:rerun": "bash -c 'set -a; [ -f .env ] && . .env; set +a; [ -d /opt/homebrew/opt/mysql-client@8.0/bin ] && PATH=\"/opt/homebrew/opt/mysql-client@8.0/bin:$PATH\"; rerun-behat-tests'"
     },
     "config": {
         "allow-plugins": {
