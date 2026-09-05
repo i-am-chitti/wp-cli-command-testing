@@ -36,6 +36,9 @@
         "behat:clean": "bash -c 'rm -rf \"${TMPDIR:-/tmp/}\"wp-cli-test-* /var/tmp/wp-cli-test-*; echo \"Behat caches cleared.\"'"
     },
     "config": {
+        "platform": {
+            "php": "8.2"
+        },
         "allow-plugins": {
             "composer/installers": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
