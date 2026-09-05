@@ -42,6 +42,15 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 	public function run( array $args, array $assoc_args ): void {
 		$mapping = $this->load_mapping( (string) ( $assoc_args['map'] ?? '' ) );
 
+		// Plain method call, not runcommand() — same package, so the
+		// indirection would buy nothing and cost testability.
+		$invalid = $this->find_invalid_mapping( $mapping );
+
+		if ( null !== $invalid ) {
+			WP_CLI::error( $invalid );
+			return;
+		}
+
 		try {
 			$migrated = $this->migrate( $mapping );
 		} catch ( Mapping_Error $error ) {
@@ -74,14 +83,34 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 	public function verify_mapping( array $args, array $assoc_args ): void {
 		$mapping = $this->load_mapping( (string) ( $assoc_args['map'] ?? '' ) );
 
-		foreach ( $mapping as $legacy_id => $user_id ) {
-			if ( ! get_userdata( $user_id ) ) {
-				WP_CLI::error( "Mapping references a WordPress user that doesn't exist: {$user_id} (legacy ID {$legacy_id})" );
-				return;
-			}
+		$invalid = $this->find_invalid_mapping( $mapping );
+
+		if ( null !== $invalid ) {
+			WP_CLI::error( $invalid );
+			return;
 		}
 
 		WP_CLI::success( count( $mapping ) . ' mappings verified.' );
+	}
+
+	/**
+	 * Find the first mapping entry pointing at a WordPress user that doesn't exist.
+	 *
+	 * Returns a message rather than calling WP_CLI::error(), so `verify-mapping`
+	 * and `run`'s pre-flight check can each report it their own way.
+	 *
+	 * @param array<string, int> $mapping Legacy author ID => WordPress user ID.
+	 *
+	 * @return string|null Error message, or null when every mapped user exists.
+	 */
+	private function find_invalid_mapping( array $mapping ): ?string {
+		foreach ( $mapping as $legacy_id => $user_id ) {
+			if ( ! get_userdata( $user_id ) ) {
+				return "Mapping references a WordPress user that doesn't exist: {$user_id} (legacy ID {$legacy_id})";
+			}
+		}
+
+		return null;
 	}
 
 	/**

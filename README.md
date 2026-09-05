@@ -4,7 +4,7 @@ Two example WP-CLI commands, tested with PHPUnit and Behat. Companion code for a
 
 ## Commands
 
-- **`wp migrate-authors run --map=<file>`** — reassigns `post_author` using a legacy-id → WordPress-user-id CSV mapping. Stops at the first post whose legacy ID isn't in the mapping; posts already migrated stay migrated.
+- **`wp migrate-authors run --map=<file>`** — reassigns `post_author` using a legacy-id → WordPress-user-id CSV mapping. Refuses to start if the mapping points at users that don't exist, then stops at the first post whose legacy ID isn't in the mapping; posts already migrated stay migrated.
 - **`wp migrate-authors verify-mapping --map=<file>`** — checks that every WordPress user ID in a mapping file exists.
 - **`wp stale-drafts list --days=<n> --format=<table|json|csv>`** — lists drafts last modified more than `n` days ago.
 
