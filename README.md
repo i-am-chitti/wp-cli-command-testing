@@ -32,7 +32,8 @@ If Behat fails in `BeforeSuite` with `rename(...): Directory not empty`, its cac
 
 - **`prepare-tests` is `bin/prepare-db.php`**, using PHP's `mysqli` rather than shelling out to `mysql`. The bundled `install-package-tests` from `wp-cli/wp-cli-tests` requests `mysql_native_password` explicitly, which fails on clients that dropped that plugin (Homebrew's `mysql` 26.x, for one).
 - **Behat runs on SQLite locally** via `WP_CLI_TEST_DBTYPE=sqlite`, so it needs no database server — `FeatureContext` skips its `mysql`/`mysqldump` shell-outs in that mode. CI leaves this unset and runs Behat against MySQL, so that path still gets coverage.
-- **WordPress versions are pinned** in `.env` and the CI matrix. `WP_VERSION=latest` isn't a value `wp core download --version=` accepts, and a pinned matrix can't go red overnight because WordPress shipped a release.
+- **One WordPress version, pinned to 7.1** in two places that have to agree: `roots/wordpress` in `composer.json` (what PHPUnit tests against) and `WP_VERSION` in `.env` and CI (what Behat downloads).
+- **`WP_CLI_PHP_ARGS` raises the memory limit.** WordPress 7.x archives don't extract under PHP CLI's default 128M — `wp core download` dies mid-extract and leaves a half-written Behat cache.
 - **PHPUnit is pinned to `^9.6`.** The latest 10.5.x removed a `PHPUnit\Util\Test` method that `wp-phpunit`'s `abstract-testcase.php` still calls — an internal API, so `phpunit-polyfills` doesn't cover it.
 
 ## What each test covers
