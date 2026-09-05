@@ -130,14 +130,16 @@ class Migrate_Authors_Command_Test extends WP_UnitTestCase {
 
 		$mapping_file = tempnam( sys_get_temp_dir(), 'map' );
 		self::assertNotFalse( $mapping_file );
-		file_put_contents( $mapping_file, "101,{$new_author}\n" );
+		self::assertNotFalse( file_put_contents( $mapping_file, "101,{$new_author}\n" ) );
 
-		( new Migrate_Authors_Command() )->run( [], [ 'map' => $mapping_file ] );
+		try {
+			( new Migrate_Authors_Command() )->run( [], [ 'map' => $mapping_file ] );
 
-		unlink( $mapping_file );
-
-		$this->assertSame( $new_author, (int) get_post( $post_a )->post_author );
-		$this->assertStringContainsString( '1 posts migrated', $this->logger->messages['success'][0] ?? '' );
+			$this->assertSame( $new_author, (int) get_post( $post_a )->post_author );
+			$this->assertStringContainsString( '1 posts migrated', $this->logger->messages['success'][0] ?? '' );
+		} finally {
+			unlink( $mapping_file );
+		}
 	}
 
 	// No test here for run() with a bad mapping: WP_CLI::error() exits the

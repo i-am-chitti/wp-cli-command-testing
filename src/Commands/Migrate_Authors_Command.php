@@ -186,7 +186,10 @@ class Migrate_Authors_Command extends WP_CLI_Command {
 
 		$mapping = [];
 
-		while ( false !== ( $row = fgetcsv( $handle ) ) ) {
+		// $escape is passed explicitly: its default is deprecated as of PHP 8.4
+		// and changes in PHP 9. '' is the RFC 4180 behaviour — no escape
+		// character — which is what a mapping file should be parsed with.
+		while ( false !== ( $row = fgetcsv( $handle, null, ',', '"', '' ) ) ) {
 			if ( 2 !== count( $row ) ) {
 				continue;
 			}
