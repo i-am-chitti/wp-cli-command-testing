@@ -33,7 +33,8 @@
         "test": "phpunit",
         "prepare-tests": "php bin/prepare-db.php",
         "behat": "bash -c 'set -a; [ -f .env ] && . .env; set +a; [ \"${WP_VERSION:-}\" = latest ] && unset WP_VERSION; vendor/bin/behat'",
-        "behat:rerun": "bash -c 'set -a; [ -f .env ] && . .env; set +a; [ \"${WP_VERSION:-}\" = latest ] && unset WP_VERSION; vendor/bin/behat --rerun'"
+        "behat:rerun": "bash -c 'set -a; [ -f .env ] && . .env; set +a; [ \"${WP_VERSION:-}\" = latest ] && unset WP_VERSION; vendor/bin/behat --rerun'",
+        "behat:clean": "bash -c 'rm -rf \"${TMPDIR:-/tmp/}\"wp-cli-test-* /var/tmp/wp-cli-test-*; echo \"Behat caches cleared.\"'"
     },
     "config": {
         "allow-plugins": {

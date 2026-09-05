@@ -26,6 +26,12 @@ composer behat           # Behat, against the real `wp` binary
 
 `.env` is gitignored and loaded automatically, so nothing needs exporting by hand: `tests/bootstrap.php` loads it for PHPUnit, and the `behat` script sources it into a real shell environment (Behat spawns `wp` subprocesses, which only inherit real env vars).
 
+If Behat fails in `BeforeSuite` with `rename(...): Directory not empty`, its cache got half-written by an interrupted run — clear it and try again:
+
+```bash
+composer behat:clean
+```
+
 Two deliberate choices keep this from needing any `mysql` client binary locally:
 
 - **`prepare-tests` is our own script** (`bin/prepare-db.php`), using PHP's `mysqli` rather than shelling out to `mysql`. `wp-cli/wp-cli-tests`' bundled `install-package-tests` shells out to the CLI and requests `mysql_native_password` explicitly, which fails outright on clients that dropped that plugin (Homebrew's `mysql` 26.x, for one).
